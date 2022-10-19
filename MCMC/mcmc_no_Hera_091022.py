@@ -349,7 +349,7 @@ sampler, pos, prob, state = main(p0, nwalkers, niter, ndim, lnprob, data)
 samples = sampler.get_chain()
 
 flat_samples = sampler.chain[:, :, :].reshape((-1, ndim))
-pickle.dump(flat_samples, open('MCMC_results_091022_no_hera.pk', 'wb'))
+pickle.dump(flat_samples, open('MCMC_results_191022_no_hera.pk', 'wb'))
 
 print(flat_samples.shape)
 plt.ion()
@@ -359,4 +359,4 @@ labels = [r'$\log_{10}f_{\ast,10}$', r'$\alpha_{\ast}$', r'$\log_{10}f_{{\rm esc
           r'$E_0/{\rm keV}$', r'$\alpha_{X}$']
 fig = corner.corner(flat_samples, show_titles=True, labels=labels, plot_datapoints=True,
                     quantiles=[0.16, 0.5, 0.84])
-plt.savefig('mcmc_no_hera_091022.png')
+plt.savefig('mcmc_no_hera_191022.png')
