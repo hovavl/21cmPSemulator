@@ -195,19 +195,19 @@ def predict_luminosity(theta):
 # calc the luminosity function likelihood
 def luminosity_func_lnlike(luminosity_func):
     tot_lnlike = 0
-    redshifts = [4, 5, 6, 7, 8, 10]
+    redshifts = [6, 8, 10]
     for i, func in enumerate(luminosity_func):
         lum_data = UV_LU_data[str(redshifts[i])]['phi_k']
-        lum_err = UV_LU_data[str(redshifts[i])]['err']
+        lum_err_sup = UV_LU_data[str(redshifts[i])]['err_sup']
+        lum_err_inf = UV_LU_data[str(redshifts[i])]['err_inf']
         # print(f'data size: {len(lum_data)} err size: {len(lum_err)} func size: {len(func)}')
 
         for j, val in enumerate(lum_data):
-            if val is None:
-                like = 0 if func[j] <= lum_err[j] else -100
-                tot_lnlike += like
+            if func[j] <= val:
+                like = -(1 / 2) * (((val - func[j]) / lum_err_inf[j]) ** 2 + np.log(2 * np.pi * lum_err_inf[j] ** 2))
             else:
-                like = -(1 / 2) * (((val - func[j]) / lum_err[j]) ** 2 + np.log(2 * np.pi * lum_err[j] ** 2))
-                tot_lnlike += like
+                like = -(1 / 2) * (((val - func[j]) / lum_err_sup[j]) ** 2 + np.log(2 * np.pi * lum_err_sup[j] ** 2))
+            tot_lnlike += like
     return tot_lnlike
 
 
@@ -264,9 +264,9 @@ def lnlike(theta, k_modes=emulator_k_modes, y_data=ps_data, data_err=yerr):
     else:
         xH_lnLike = (-1 / 2) * (((xH - XH_MEAN) / XH_STD) ** 2 + np.log(2 * np.pi * XH_STD ** 2))
 
-    #UV_lum = predict_luminosity(theta)
-    #luminosity_lnlike = luminosity_func_lnlike(UV_lum)
-    return  tau_lnLike + xH_lnLike + ps_lnLike + ps104_lnLike # + luminosity_lnlike 
+    UV_lum = predict_luminosity(theta)
+    luminosity_lnlike = luminosity_func_lnlike(UV_lum)
+    return  tau_lnLike + xH_lnLike + ps_lnLike + ps104_lnLike + luminosity_lnlike
     # return -0.5 * np.sum(((y_data - model(theta)) / data_err) ** 2)
 
 
@@ -346,7 +346,7 @@ samples = sampler.get_chain()
 
 
 flat_samples = sampler.chain[:, :, :].reshape((-1, ndim))
-pickle.dump(flat_samples, open('MCMC_results_091022_with_hera_no_lum.pk', 'wb'))
+pickle.dump(flat_samples, open('MCMC_results_191022_with_hera.pk', 'wb'))
 
 print(flat_samples.shape)
 plt.ion()
@@ -356,4 +356,4 @@ labels = [r'$\log_{10}f_{\ast,10}$',r'$\alpha_{\ast}$', r'$\log_{10}f_{{\rm esc}
           r'$E_0/{\rm keV}$', r'$\alpha_{X}$']
 fig = corner.corner(flat_samples, show_titles=True, labels=labels, plot_datapoints=True,
                     quantiles=[0.16, 0.5, 0.84])
-plt.savefig('mcmc_with_hera_091022_no_lum.png')
+plt.savefig('mcmc_with_hera_191022.png')

@@ -15,6 +15,7 @@ import model_for_tau
 import corner
 import json
 import UV_LF
+
 warnings.filterwarnings('ignore', module='hera_sim')
 warnings.filterwarnings('ignore', category=RuntimeWarning)
 
@@ -91,10 +92,9 @@ ks = slice(2, None)
 xlim = (0, 2.0)
 band2_err = np.sqrt(band2_cov[0].diagonal())
 band1_err = np.sqrt(band1_cov[0].diagonal())
-#data
+# data
 y = band2_dsq[0, ks].real  # omit two first values (zeros)
 y104 = band1_dsq[0, ks].real
-
 
 yerr = band2_err[ks].real
 yerr104 = band1_err[ks].real
@@ -150,10 +150,10 @@ nn_xH = model_for_xh.cosmopower_NN(restore=True,
 
 def culcPS(theta):
     tmp = copy.deepcopy(theta)
-    F_STAR10,ALPHA_STAR, F_ESC10,ALPHA_ESC, M_TURN,t_STAR,L_X, NU_X_THRESH, X_RAY_SPEC_INDEX = tmp
+    F_STAR10, ALPHA_STAR, F_ESC10, ALPHA_ESC, M_TURN, t_STAR, L_X, NU_X_THRESH, X_RAY_SPEC_INDEX = tmp
     params = {'F_STAR10': [F_STAR10], 'F_ESC10': [F_ESC10], 'L_X': [L_X], 'M_TURN': [M_TURN],
-              'NU_X_THRESH': [NU_X_THRESH], 'ALPHA_STAR':[ALPHA_STAR], 'ALPHA_ESC':[ALPHA_ESC],
-               't_STAR':[t_STAR], 'X_RAY_SPEC_INDEX':[X_RAY_SPEC_INDEX]}
+              'NU_X_THRESH': [NU_X_THRESH], 'ALPHA_STAR': [ALPHA_STAR], 'ALPHA_ESC': [ALPHA_ESC],
+              't_STAR': [t_STAR], 'X_RAY_SPEC_INDEX': [X_RAY_SPEC_INDEX]}
     predicted_testing_spectra = nn_ps.ten_to_predictions_np(params)
 
     tck = interpolate.splrep(emulator_k_modes, predicted_testing_spectra[0])
@@ -167,10 +167,10 @@ def culcPS(theta):
 # calculate the power spectrum at z = 10.4
 def culcPS2(theta):
     tmp = copy.deepcopy(theta)
-    F_STAR10,ALPHA_STAR, F_ESC10,ALPHA_ESC, M_TURN,t_STAR,L_X ,NU_X_THRESH, X_RAY_SPEC_INDEX = tmp
+    F_STAR10, ALPHA_STAR, F_ESC10, ALPHA_ESC, M_TURN, t_STAR, L_X, NU_X_THRESH, X_RAY_SPEC_INDEX = tmp
     params = {'F_STAR10': [F_STAR10], 'F_ESC10': [F_ESC10], 'L_X': [L_X], 'M_TURN': [M_TURN],
-              'NU_X_THRESH': [NU_X_THRESH], 'ALPHA_STAR':[ALPHA_STAR], 'ALPHA_ESC':[ALPHA_ESC],
-               't_STAR':[t_STAR], 'X_RAY_SPEC_INDEX':[X_RAY_SPEC_INDEX]}
+              'NU_X_THRESH': [NU_X_THRESH], 'ALPHA_STAR': [ALPHA_STAR], 'ALPHA_ESC': [ALPHA_ESC],
+              't_STAR': [t_STAR], 'X_RAY_SPEC_INDEX': [X_RAY_SPEC_INDEX]}
     predicted_testing_spectra = nn_ps104.ten_to_predictions_np(params)
 
     tck = interpolate.splrep(emulator_k_modes, predicted_testing_spectra[0])
@@ -199,29 +199,29 @@ def predict_luminosity(theta):
 # calc the luminosity function likelihood
 def luminosity_func_lnlike(luminosity_func):
     tot_lnlike = 0
-    redshifts = [4, 5, 6, 7, 8, 10]
+    redshifts = [6, 8, 10]
     for i, func in enumerate(luminosity_func):
         lum_data = UV_LU_data[str(redshifts[i])]['phi_k']
-        lum_err = UV_LU_data[str(redshifts[i])]['err']
+        lum_err_sup = UV_LU_data[str(redshifts[i])]['err_sup']
+        lum_err_inf = UV_LU_data[str(redshifts[i])]['err_inf']
         # print(f'data size: {len(lum_data)} err size: {len(lum_err)} func size: {len(func)}')
 
         for j, val in enumerate(lum_data):
-            if val is None:
-                like = 0 if func[j] <= lum_err[j] else -100
-                tot_lnlike += like
+            if func[j] <= val:
+                like = -(1 / 2) * (((val - func[j]) / lum_err_inf[j]) ** 2 + np.log(2 * np.pi * lum_err_inf[j] ** 2))
             else:
-                like = -(1 / 2) * (((val - func[j]) / lum_err[j]) ** 2 + np.log(2 * np.pi * lum_err[j] ** 2))
-                tot_lnlike += like
+                like = -(1 / 2) * (((val - func[j]) / lum_err_sup[j]) ** 2 + np.log(2 * np.pi * lum_err_sup[j] ** 2))
+            tot_lnlike += like
     return tot_lnlike
 
 
 # predict tau
 def predict_tau(theta):
     tmp = copy.deepcopy(theta)
-    F_STAR10,ALPHA_STAR, F_ESC10,ALPHA_ESC, M_TURN,t_STAR,L_X ,NU_X_THRESH, X_RAY_SPEC_INDEX = tmp
+    F_STAR10, ALPHA_STAR, F_ESC10, ALPHA_ESC, M_TURN, t_STAR, L_X, NU_X_THRESH, X_RAY_SPEC_INDEX = tmp
     params = {'F_STAR10': [F_STAR10], 'F_ESC10': [F_ESC10], 'L_X': [L_X], 'M_TURN': [M_TURN],
-              'NU_X_THRESH': [NU_X_THRESH], 'ALPHA_STAR':[ALPHA_STAR], 'ALPHA_ESC':[ALPHA_ESC],
-               't_STAR':[t_STAR], 'X_RAY_SPEC_INDEX':[X_RAY_SPEC_INDEX]}
+              'NU_X_THRESH': [NU_X_THRESH], 'ALPHA_STAR': [ALPHA_STAR], 'ALPHA_ESC': [ALPHA_ESC],
+              't_STAR': [t_STAR], 'X_RAY_SPEC_INDEX': [X_RAY_SPEC_INDEX]}
     predicted_tau = nn_tau.predictions_np(params)[0]
     return predicted_tau
 
@@ -229,10 +229,10 @@ def predict_tau(theta):
 # predict xH
 def predict_xH(theta):
     tmp = copy.deepcopy(theta)
-    F_STAR10,ALPHA_STAR, F_ESC10,ALPHA_ESC, M_TURN,t_STAR,L_X ,NU_X_THRESH, X_RAY_SPEC_INDEX = tmp
+    F_STAR10, ALPHA_STAR, F_ESC10, ALPHA_ESC, M_TURN, t_STAR, L_X, NU_X_THRESH, X_RAY_SPEC_INDEX = tmp
     params = {'F_STAR10': [F_STAR10], 'F_ESC10': [F_ESC10], 'L_X': [L_X], 'M_TURN': [M_TURN],
-              'NU_X_THRESH': [NU_X_THRESH], 'ALPHA_STAR':[ALPHA_STAR], 'ALPHA_ESC':[ALPHA_ESC],
-               't_STAR':[t_STAR], 'X_RAY_SPEC_INDEX':[X_RAY_SPEC_INDEX]}
+              'NU_X_THRESH': [NU_X_THRESH], 'ALPHA_STAR': [ALPHA_STAR], 'ALPHA_ESC': [ALPHA_ESC],
+              't_STAR': [t_STAR], 'X_RAY_SPEC_INDEX': [X_RAY_SPEC_INDEX]}
     predicted_xH = nn_xH.predictions_np(params)[0]
     return max(predicted_xH, 0)
 
@@ -253,9 +253,9 @@ def lnlike(theta, k_modes=emulator_k_modes, y_data=ps_data, data_err=yerr):
     #     np.log(np.sqrt(2 * np.pi) * data_err))
     # return tmp
 
-    #ps_lnLike = np.sum(np.log((1 / 2) * (1 + special.erf((y_data - model(theta)) / (data_err * np.sqrt(2))))))
+    # ps_lnLike = np.sum(np.log((1 / 2) * (1 + special.erf((y_data - model(theta)) / (data_err * np.sqrt(2))))))
 
-    #ps104_lnLike = np.sum(np.log((1 / 2) * (1 + special.erf((ps_data104 - model2(theta)) / (yerr104 * np.sqrt(2))))))
+    # ps104_lnLike = np.sum(np.log((1 / 2) * (1 + special.erf((ps_data104 - model2(theta)) / (yerr104 * np.sqrt(2))))))
 
     tau = predict_tau(theta)
     if tau > TAU_MEAN:
@@ -270,7 +270,7 @@ def lnlike(theta, k_modes=emulator_k_modes, y_data=ps_data, data_err=yerr):
 
     UV_lum = predict_luminosity(theta)
     luminosity_lnlike = luminosity_func_lnlike(UV_lum)
-    return  tau_lnLike + xH_lnLike + luminosity_lnlike # + ps_lnLike + ps104_lnLike 
+    return tau_lnLike + xH_lnLike + luminosity_lnlike  # + ps_lnLike + ps104_lnLike
     # return -0.5 * np.sum(((y_data - model(theta)) / data_err) ** 2)
 
 
@@ -278,10 +278,10 @@ def lnprior(theta):
     # n = np.random.rand()
     # if n > 0.9:
     #     print('theta: ', theta)
-    F_STAR10,ALPHA_STAR, F_ESC10,ALPHA_ESC, M_TURN,t_STAR,L_X ,NU_X_THRESH, X_RAY_SPEC_INDEX = theta
-    
-    if (-3.0 <= F_STAR10 <= 0.0 and -3.0 <= F_ESC10 <= 0.0 and 38 <= L_X <= 42 and 8 <= M_TURN <= 10 
-    and -0.5 <=ALPHA_STAR <= 1 and -1 <= ALPHA_ESC <= 0.5 and 0 <= t_STAR <= 1 and -1 <= X_RAY_SPEC_INDEX <= 3
+    F_STAR10, ALPHA_STAR, F_ESC10, ALPHA_ESC, M_TURN, t_STAR, L_X, NU_X_THRESH, X_RAY_SPEC_INDEX = theta
+
+    if (-3.0 <= F_STAR10 <= 0.0 and -3.0 <= F_ESC10 <= 0.0 and 38 <= L_X <= 42 and 8 <= M_TURN <= 10
+            and -0.5 <= ALPHA_STAR <= 1 and -1 <= ALPHA_ESC <= 0.5 and 0 <= t_STAR <= 1 and -1 <= X_RAY_SPEC_INDEX <= 3
             and 100 <= NU_X_THRESH <= 1500):
         return 0.0
     # if (-1.62 <= F_STAR10 <= -1.04 and -1.47 <= F_ESC10 <= -0.52 and 39.29 <= L_X <= 41.52 and 8.2 <= M_TURN <= 9.17 and 300 <= NU_X_THRESH <=1210):
@@ -315,13 +315,13 @@ def main(p0, nwalkers, niter, ndim, lnprob, data):
         sampler = emcee.EnsembleSampler(nwalkers, ndim, lnprob, pool=pool)
 
         print("Running burn-in...")
-        p0, _, _,_ = sampler.run_mcmc(p0, 5000, progress=True)
+        p0, _, _, _ = sampler.run_mcmc(p0, 5000, progress=True)
         sampler.reset()
         flag = True
         count = 0
         while (flag):
             print("Running production...")
-            pos, prob, state,_ = sampler.run_mcmc(p0, niter, progress=True)
+            pos, prob, state, _ = sampler.run_mcmc(p0, niter, progress=True)
             samples = sampler.get_chain()
             print('shape of samples: ', samples.shape)
 
@@ -342,20 +342,19 @@ def main(p0, nwalkers, niter, ndim, lnprob, data):
 data = (mcmc_k_modes, ps_data, yerr)
 nwalkers = 24
 niter = 60000
-initial = np.array([-1.24,0.5,-1.11, 0.02,8.59, 0.64, 40.64, 720, 0.8])  # best guesses
+initial = np.array([-1.24, 0.5, -1.11, 0.02, 8.59, 0.64, 40.64, 720, 0.8])  # best guesses
 ndim = len(initial)
 p0 = [np.array(initial) + 1e-1 * np.random.randn(ndim) for i in range(nwalkers)]
 sampler, pos, prob, state = main(p0, nwalkers, niter, ndim, lnprob, data)
 samples = sampler.get_chain()
-
 
 flat_samples = sampler.chain[:, :, :].reshape((-1, ndim))
 pickle.dump(flat_samples, open('MCMC_results_091022_no_hera.pk', 'wb'))
 
 print(flat_samples.shape)
 plt.ion()
-labels = [r'$\log_{10}f_{\ast,10}$',r'$\alpha_{\ast}$', r'$\log_{10}f_{{\rm esc},10}$',r'$\alpha_{\rm esc}$',
-          r'$\log_{10}[M_{\rm turn}/M_{\odot}]$',r'$t_{\ast}$', 
+labels = [r'$\log_{10}f_{\ast,10}$', r'$\alpha_{\ast}$', r'$\log_{10}f_{{\rm esc},10}$', r'$\alpha_{\rm esc}$',
+          r'$\log_{10}[M_{\rm turn}/M_{\odot}]$', r'$t_{\ast}$',
           r'$\log_{10}\frac{L_{\rm X<2 , keV/SFR}}{\rm erg\, s^{-1}\,M_{\odot}^{-1}\,yr}$',
           r'$E_0/{\rm keV}$', r'$\alpha_{X}$']
 fig = corner.corner(flat_samples, show_titles=True, labels=labels, plot_datapoints=True,
